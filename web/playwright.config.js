@@ -8,8 +8,9 @@ export default defineConfig({
   expect: { timeout: 7000 },
   fullyParallel: true,
   workers: 2,
-  retries: 0,
-  reporter: [['list']],
+  // On GitHub: one retry (a retried pass is reported as flaky) and failures shown as annotations.
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? [['list'], ['github']] : [['list']],
   use: {
     viewport: { width: 384, height: 855 },
     deviceScaleFactor: 2,

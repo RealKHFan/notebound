@@ -13,7 +13,7 @@ permissions:
 jobs:
   test-ui:
     name: UI tests (Chromium, Pixel 8 Pro size)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: web
@@ -27,6 +27,10 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm test
+      - name: Summary of failed tests
+        if: failure()
+        run: |
+          if [ -f test-results/.last-run.json ]; then echo "::error title=Playwright last run::$(tr -d '\n' < test-results/.last-run.json)"; fi
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -36,7 +40,7 @@ jobs:
   android:
     name: Build APK
     needs: test-ui
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
