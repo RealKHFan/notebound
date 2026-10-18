@@ -1,0 +1,41 @@
+{
+  "format": "pocketbook",
+  "version": 1,
+  "labels": [
+    "home",
+    "food",
+    "work"
+  ],
+  "notebooks": [],
+  "settings": {
+    "theme": "dark",
+    "accent": "ink",
+    "layout": "grid",
+    "sort": "custom",
+    "editorFont": "sans",
+    "fontSize": 17,
+    "lineHeight": 1.6,
+    "newNotesAtBottom": false,
+    "checkedToBottom": true,
+    "spellcheck": true,
+    "markdownShortcuts": true,
+    "emojiShortcodes": true,
+    "trashDays": 7,
+    "history": true,
+    "historyMax": 30,
+    "morning": "08:00",
+    "afternoon": "13:00",
+    "evening": "18:00",
+    "cardLines": 6
+  },
+  "vault": {
+    "salt": "wwYPY5B81OyxZgAvkch4RA==",
+    "iter": 310000,
+    "check": {
+      "iv": "YHOBQ++bDSJ4lJRN",
+      "data": "HkZuF/0zIAQo8eAbIamCkQOq2wQgG7cxe5E/JYcLHTttn1+N38w="
+    }
+  },
+  "picturePreviews": 1,
+  "updated": "2026-10-18T20:34:44.734Z"
+}

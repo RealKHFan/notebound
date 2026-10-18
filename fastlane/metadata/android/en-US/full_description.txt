@@ -1,0 +1,31 @@
+<p>Notebound is a note-taking app that keeps every note as a normal file in a folder you choose, for example Documents/Notebound. Back the folder up any way you like: your notes, labels, notebooks, reminders and settings are all in it.</p>
+
+<p><b>Your notes stay yours</b></p>
+<ul>
+<li>No account, no sync service, no ads, no tracking.</li>
+<li>The app has no internet permission at all.</li>
+<li>Each note is a self-contained .html file that opens in any browser.</li>
+<li>Lock private notes with a vault password (AES-256 encryption) and lock the whole app with your fingerprint or PIN.</li>
+</ul>
+
+<p><b>An overview like Google Keep</b></p>
+<ul>
+<li>Colourful note cards in a grid or list, pinned notes on top.</li>
+<li>Drag to reorder, swipe to archive, long-press to select several notes.</li>
+<li>Labels, notebooks with sub-notebooks, favorites, archive and trash.</li>
+<li>Search with filters for lists, images, drawings, links, files, colors and labels.</li>
+<li>Reminders, one-time or repeating, that survive restarts.</li>
+<li>Home screen widgets and app shortcuts.</li>
+</ul>
+
+<p><b>A calm editor like Notesnook</b></p>
+<ul>
+<li>Headings, lists, checklists, quotes, callouts, tables, code blocks with highlighting, math, collapsible sections and dividers.</li>
+<li>Discord-style typing shortcuts: **bold**, *italic*, __underline__, ~~strike~~, ||spoiler||, `code`, # heading, - list, [] checkbox and :emoji:.</li>
+<li>A "/" menu for everything, links between notes with backlinks, find and replace, outline and version history.</li>
+<li>Images, photos, file attachments and finger or stylus drawings.</li>
+<li>Keep-style checklists: checked items move to the bottom.</li>
+</ul>
+
+<p><b>Bring your notes</b></p>
+<p>Import Google Keep (Takeout), Notesnook exports and Markdown, text or HTML files. Export notes as HTML, Markdown, plain text or PDF, or make a full backup .zip.</p>

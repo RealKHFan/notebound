@@ -1,0 +1,1 @@
+First release: notes, checklists, drawings, images and files stored in a folder you choose; labels, notebooks, reminders, widgets, app lock, locked notes, version history, import from Google Keep and Notesnook, export to HTML, Markdown, text and PDF.

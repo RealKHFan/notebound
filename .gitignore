@@ -1,0 +1,27 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing keys never go into the repository
+keystore.properties
+*.jks
+*.keystore
+
+# Generated UI bundle (built from web/ by Gradle)
+app/src/main/assets/web/
+
+# Web tooling
+web/node_modules/
+web/.test-build/
+web/test-results/
+web/playwright-report/
+web/tests/debug/
+
+# Local outputs
+dist/
