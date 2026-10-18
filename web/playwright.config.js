@@ -2,6 +2,9 @@
 // (384 x 855 dp), with a test double of the Android host (tests/mock-server.mjs).
 import { defineConfig } from '@playwright/test';
 
+// The app runs in Berlin time (timezoneId below); the test code that checks dates must too.
+process.env.TZ = 'Europe/Berlin';
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 45000,
