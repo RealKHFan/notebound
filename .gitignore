@@ -10,8 +10,11 @@ captures/
 
 # Signing keys never go into the repository
 keystore.properties
+keystore-info.txt
+signing/
 *.jks
 *.keystore
+*.p12
 
 # Generated UI bundle (built from web/ by Gradle)
 app/src/main/assets/web/

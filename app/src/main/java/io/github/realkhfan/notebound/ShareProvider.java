@@ -23,6 +23,14 @@ public final class ShareProvider extends ContentProvider {
         return ctx.getPackageName() + ".files";
     }
 
+    /**
+     * Whether a file another app shares with us may be read: only content:// from someone else's
+     * provider. A file:// path or our own provider would make Notebound copy its private files.
+     */
+    static boolean acceptShared(String scheme, String authority, String ownAuthority) {
+        return "content".equals(scheme) && authority != null && !authority.isEmpty() && !authority.equals(ownAuthority);
+    }
+
     static Uri uriFor(Context ctx, File file) {
         File cache = ctx.getCacheDir();
         String rel = cache.toURI().relativize(file.toURI()).getPath();

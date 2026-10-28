@@ -1,5 +1,5 @@
 // Actions on one or more notes, shared by the home screen selection bar and the editor.
-import { vault, snack, ui, ask, openSheet, runAction } from './app-state.js';
+import { vault, snack, ask, runAction } from './app-state.js';
 import { plural } from './format.js';
 import { exportNotes } from '../io/exporters.js';
 
@@ -85,9 +85,4 @@ export function favoriteNotes(ids, favorite) {
   return runAction('Favorite', () => vault.updateMeta(ids, { favorite }));
 }
 
-export function exportSelection(ids) {
-  openSheet('export', { ids });
-}
-
 export { exportNotes };
-export const selectionIds = () => ui.get().selection;

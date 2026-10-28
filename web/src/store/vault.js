@@ -3,11 +3,10 @@
 import { native } from '../native.js';
 import {
   parseNote, serializeNote, extractInfo, noteFileName, idFromFileName, defaultMeta,
-  referencedFiles, normalizeForSearch, newId, COLORS, escapeHtml,
+  referencedFiles, normalizeForSearch, newId, COLORS,
 } from './note-format.js';
 import { nextOccurrence } from './recurrence.js';
 import { sortEntries } from './query.js';
-import { addPreviewsToHtml } from './previews.js';
 import * as vc from './crypto.js';
 
 export const NOTES = 'notes';
@@ -391,42 +390,6 @@ export class Vault {
     });
   }
 
-  /**
-   * Notes saved before version 1.0.1 have pictures without the small copy a
-   * browser shows when it cannot reach the attachments folder (previews.js).
-   * This adds it once, in the background. It is not an edit: "Edited", the
-   * order and the history stay as they are, files written by hand (no
-   * Notebound metadata) are left alone, and nothing is renamed.
-   */
-  async addPicturePreviews({ stop = () => false } = {}) {
-    if (this.config.picturePreviews) return 0;
-    let changed = 0;
-    for (const e of [...this.entries.values()]) {
-      if (stop()) return changed;
-      if (!e.imageCount || e.meta.locked || e.foreign) continue;
-      try {
-        await this.withLock(e.id, async () => {
-          const cur = this.get(e.id);
-          if (!cur || cur.meta.locked || cur.foreign) return;
-          const text = await native.read(notePath(cur.file));
-          if (text == null) return;
-          const parsed = parseNote(text, cur.file);
-          if (parsed.foreign || parsed.meta.locked || noteFileName(parsed.title, parsed.meta.id) !== cur.file) return;
-          const html = await addPreviewsToHtml(parsed.html);
-          if (html === parsed.html || stop()) return;
-          await this.writeNote(parsed.meta, parsed.title, html, cur);
-          changed++;
-        });
-      } catch (err) {
-        console.warn('picture previews', e.id, err);
-      }
-    }
-    this.config.picturePreviews = 1;
-    this.saveConfig();
-    if (changed) this.emit({ type: 'previews' });
-    return changed;
-  }
-
   /** Change metadata of one or more notes without touching their content. */
   async updateMeta(ids, patch, { touch = false } = {}) {
     const list = Array.isArray(ids) ? ids : [ids];
@@ -760,6 +723,11 @@ export class Vault {
 
   async updateWidget() {
     if (!this.ready) return;
+    // The home screen widget must not show what app lock hides; tapping it opens the app.
+    if ((await native.prefsGet('appLock')) === '1') {
+      await native.widgetData(JSON.stringify({ notes: [{ id: 'locked', title: 'Notebound is locked', text: 'Tap to open', light: '', dark: '', pinned: false }] }));
+      return;
+    }
     const list = sortEntries(this.all().filter((e) => !e.meta.trashed && !e.meta.archived), this.config.settings.sort);
     const pinned = list.filter((e) => e.meta.pinned);
     const others = list.filter((e) => !e.meta.pinned);
@@ -783,11 +751,4 @@ export class Vault {
 function finalize(e) {
   e.search = normalizeForSearch(`${e.title}\n${e.text}\n${e.meta.labels.join(' ')}`);
   return e;
-}
-
-export function plainTextToHtml(text) {
-  return String(text || '')
-    .split(/\r?\n/)
-    .map((line) => `<p>${escapeHtml(line)}</p>`)
-    .join('');
 }

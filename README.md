@@ -84,6 +84,12 @@ Download the APK from the [Releases](../../releases) page and open it on your ph
 
 On first start, choose or create a folder (for example `Documents/Notebound`). To move to a new phone, copy that folder and choose it again.
 
+Every release is signed with the same key. To check that an APK really comes from this project (for example with AppVerifier, or `apksigner verify --print-certs`), compare its signing certificate's SHA-256:
+
+```
+53:F7:DC:86:F5:C6:BA:63:4B:6A:63:36:D3:3B:F6:42:50:58:3E:DC:79:0C:33:A7:5D:19:BB:F1:64:34:E8:38
+```
+
 ## Build
 
 The app is a small native Android shell (Java, no third-party libraries) around a web UI (Preact + TipTap) bundled into the APK.

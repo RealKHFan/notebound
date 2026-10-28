@@ -128,7 +128,7 @@ final class Bridge {
                     try {
                         dispatchUi(id, method, args);
                     } catch (Throwable t) {
-                        Log.w(TAG, method, t);
+                        Log.w(TAG, method + " failed: " + t.getClass().getSimpleName());
                         reject(id, message(t));
                     }
                 }
@@ -142,7 +142,8 @@ final class Bridge {
                     Object result = dispatch(method, args);
                     resolve(id, result);
                 } catch (Throwable t) {
-                    Log.w(TAG, method, t);
+                    // only the kind of error: messages can contain file names, which are note titles
+                    Log.w(TAG, method + " failed: " + t.getClass().getSimpleName());
                     reject(id, message(t));
                 }
             }
@@ -579,8 +580,10 @@ final class Bridge {
             }
             case "capturePhoto": {
                 File dir = new File(activity.getCacheDir(), "capture");
-                if (!dir.exists() && !dir.mkdirs()) throw new IOException("Cannot prepare camera");
+                deleteTree(dir); // a photo from an earlier attempt has already been used or given up
+                if (!dir.mkdirs() && !dir.isDirectory()) throw new IOException("Cannot prepare camera");
                 captureFile = new File(dir, "photo-" + System.currentTimeMillis() + ".jpg");
+                prefs.edit().putString("capturePath", captureFile.getPath()).apply();
                 Uri out = ShareProvider.uriFor(activity, captureFile);
                 Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 i.putExtra(MediaStore.EXTRA_OUTPUT, out);
@@ -834,7 +837,11 @@ final class Bridge {
     void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
         final Integer id = waiting.remove(requestCode);
         final Object extra = waitingData.remove(requestCode);
-        if (id == null) return;
+        if (id == null) {
+            // Android closed the app while the camera was open: keep the photo as a new note.
+            if (requestCode == REQ_CAPTURE && resultCode == Activity.RESULT_OK) recoverPhoto();
+            return;
+        }
         final boolean ok = resultCode == Activity.RESULT_OK;
         switch (requestCode) {
             case REQ_CONFIRM:
@@ -894,6 +901,7 @@ final class Bridge {
                 return;
             }
             case REQ_CAPTURE: {
+                prefs.edit().remove("capturePath").apply();
                 final File f = captureFile;
                 captureFile = null;
                 if (!ok || f == null || !f.exists() || f.length() == 0) {
@@ -968,6 +976,15 @@ final class Bridge {
             default:
                 resolve(id, null);
         }
+    }
+
+    private void recoverPhoto() {
+        String path = prefs.getString("capturePath", null);
+        prefs.edit().remove("capturePath").apply();
+        if (path == null) return;
+        File f = new File(path);
+        if (!f.exists() || f.length() == 0) return;
+        activity.deliverPhoto(ShareProvider.uriFor(activity, f));
     }
 
     /** Tells the screen how far a long write has come (at most a few times a second). */

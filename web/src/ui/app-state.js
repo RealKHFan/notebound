@@ -135,12 +135,6 @@ export async function openVault() {
     ui.set({ phase: 'ready' });
     applySecureFlags();
     vault.initialScan?.then(() => applyDoneReminders());
-    // once per folder: give older pictures the copy a browser can show (quietly, after start-up)
-    const opened = vault.folderKey;
-    vault.initialScan?.then(() => setTimeout(() => {
-      vault.addPicturePreviews({ stop: () => vault.folderKey !== opened })
-        .catch((e) => console.warn('picture previews', e));
-    }, 2500));
     watchReminders();
     if (pendingCrash) {
       const report = pendingCrash;
@@ -195,10 +189,12 @@ const lockedEditors = new Set();
 export function markLockedEditor(key, locked) {
   if (locked) lockedEditors.add(key);
   else lockedEditors.delete(key);
+  applySecureFlags();
 }
 export function releaseLockedEditor(key) {
   if (!lockedEditors.delete(key)) return;
   if (!lockedEditors.size && vault.password) vault.lockVault();
+  applySecureFlags();
 }
 /** After using the password outside a locked note (e.g. an export), forget it again. */
 export function relockIfIdle() {
@@ -267,7 +263,7 @@ function planInAppReminder() {
 export async function appLockEnabled() {
   return (await native.prefsGet('appLock')) === '1';
 }
-const OWN_LAUNCH_GRACE = 15 * 60000;
+const OWN_LAUNCH_GRACE = 2 * 60000; // enough to pick a photo; longer would let someone skip the lock
 export const NOTE_LOCK_DEFAULT = '10000';
 /** How long you can be away from the app before open locked notes close (setting, per phone). */
 export async function noteLockMs() {
@@ -298,7 +294,8 @@ export async function unlockApp() {
 }
 export async function applySecureFlags() {
   try {
-    const secure = (await native.prefsGet('secureScreen')) === '1';
+    // An open locked note is never in screenshots or the recent-apps preview, whatever the settings.
+    const secure = (await native.prefsGet('secureScreen')) === '1' || lockedEditors.size > 0;
     const lock = await appLockEnabled();
     await native.setSecure(secure, lock || secure);
   } catch (e) {
@@ -318,10 +315,6 @@ export function pushPage(page) {
 }
 export function popPage() {
   ui.set((s) => ({ pages: s.pages.slice(0, -1) }));
-}
-export function topPage() {
-  const p = ui.get().pages;
-  return p[p.length - 1] || null;
 }
 export function closePage(key) {
   ui.set((s) => ({ pages: s.pages.filter((p) => p.key !== key) }));
@@ -481,7 +474,7 @@ export function installHostEvents() {
   on('resume', async (d) => {
     const away = d?.pausedMs ?? (pausedAt ? Date.now() - pausedAt : 0);
     // Coming back from a picker or the camera that the app opened is not leaving the app,
-    // unless it took very long (then you may have gone off to other apps in between).
+    // unless it took over 2 minutes (then you may have gone off to other apps in between).
     const own = !!d?.forResult && away < OWN_LAUNCH_GRACE;
     // Locked notes close again after a short time away from the app (10 seconds unless changed).
     if (vault.password && !own && away >= (await noteLockMs())) closeLockedNotes();

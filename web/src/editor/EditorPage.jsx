@@ -260,7 +260,10 @@ export function EditorPage({ page }) {
       const edNow = editorRef.current;
       // Every edit is already queued by onUpdate / the title input; close() only writes if something changed.
       session.close()
-        .then((r) => { if (r === 'discarded') snack('Empty note discarded'); })
+        .then((r) => {
+          if (r === 'discarded') snack('Empty note discarded');
+          if (r === 'unsaved') snack('Could not save your last changes: ' + (session.lastError?.message || 'unknown error'));
+        })
         .catch((e) => snack('Could not save: ' + (e.message || e)))
         .finally(() => releaseLockedEditor(page.key));
       edNow?.destroy();
@@ -296,6 +299,7 @@ export function EditorPage({ page }) {
 
   useBackHandler(useCallback(() => {
     if (find) { setFind(null); editorRef.current?.commands.setFindTerm(''); return true; }
+    if (session.pending && session.lastError) { close(); return true; }
     return false;
   }, [find]));
 
@@ -374,7 +378,12 @@ export function EditorPage({ page }) {
     patch: (p) => runAction('Update note', async () => { await session.updateMeta(p); rerender(); }),
   };
 
-  const close = () => popPage();
+  // Leaving waits for the last save; if it fails, the note stays open so nothing typed is lost.
+  const close = async () => {
+    await session.flush();
+    if (session.pending) { snack('Could not save: ' + (session.lastError?.message || 'unknown error') + '. Your text is still here.'); return; }
+    popPage();
+  };
 
   const togglePin = () => target.patch({ pinned: !meta.pinned, ...(meta.pinned ? {} : { archived: false }) });
   const toggleArchive = async () => {

@@ -67,9 +67,9 @@ test('coming back from the photo picker or camera does not close a locked note',
   await hostEvent(app, 'resume', { pausedMs: 60000, forResult: true });
   await app.waitForTimeout(300);
   await expect(editor(app)).toContainText('dear diary');
-  // but going away for a long time from there still closes it
+  // but more than 2 minutes away from there still closes it
   await hostEvent(app, 'pause');
-  await hostEvent(app, 'resume', { pausedMs: 20 * 60000, forResult: true });
+  await hostEvent(app, 'resume', { pausedMs: 3 * 60000, forResult: true });
   await expect(app.locator('.editor-page')).toHaveCount(0);
 });
 
@@ -101,9 +101,40 @@ test('app lock does not lock you out when you come back from a picker', async ({
   await app.waitForTimeout(300);
   await expect(app.getByRole('button', { name: 'Open menu' })).toBeVisible();
   srv.state.auth.result = false;
+  // more than 2 minutes in a picker counts as leaving: someone could back out of it into the app
+  await hostEvent(app, 'pause');
+  await hostEvent(app, 'resume', { pausedMs: 3 * 60000, forResult: true });
+  await expect(app.getByRole('heading', { name: /is locked$/ })).toBeVisible();
+});
+
+test('app lock still locks after leaving normally', async ({ app, srv }) => {
+  srv.state.prefs = { ...(srv.state.prefs || {}), appLock: '1', lockTimeout: '0' };
+  srv.state.auth.result = false;
   await hostEvent(app, 'pause');
   await hostEvent(app, 'resume', { pausedMs: 30000 });
   await expect(app.getByRole('heading', { name: /is locked$/ })).toBeVisible();
+});
+
+test('an open locked note is kept out of screenshots and the recent-apps preview', async ({ app, srv }) => {
+  await lockAndOpen(app, srv, 'Diary', 'dear diary');
+  await expect.poll(() => srv.calls('setSecure').at(-1)?.args).toEqual({ secure: true, hideRecents: true });
+  await app.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect.poll(() => srv.calls('setSecure').at(-1)?.args).toEqual({ secure: false, hideRecents: false });
+});
+
+test.describe('the notes widget with app lock on', () => {
+  test.use({ srvOptions: { hasFolder: true, prefs: { appLock: '1', lockTimeout: '0' } } });
+  test('shows only "Notebound is locked" until app lock is turned off', async ({ app, srv }) => {
+    seedNote(srv, { title: 'Bank', html: '<p>PIN is 4821</p>', pinned: true });
+    await hostEvent(app, 'resume', { pausedMs: 10 });
+    await expect(app.locator('.card', { hasText: 'Bank' })).toBeVisible();
+    await expect.poll(() => srv.state.widget?.notes?.[0]?.title, { timeout: 10000 }).toBe('Notebound is locked');
+    expect(JSON.stringify(srv.state.widget)).not.toContain('4821');
+    expect(JSON.stringify(srv.state.widget)).not.toContain('Bank');
+    await openSettings(app);
+    await app.locator('.setting', { hasText: 'App lock' }).click();
+    await expect.poll(() => srv.state.widget?.notes?.[0]?.text).toBe('PIN is 4821');
+  });
 });
 
 test('exporting locked notes asks for the password instead of failing', async ({ app, srv }) => {

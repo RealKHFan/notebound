@@ -222,6 +222,8 @@ test.describe('search, sort and layout helpers', () => {
     expect(r.pos.c).toMatchObject({ x: 108, y: 48 });
     expect(r.pos.d).toMatchObject({ x: 108, y: 86 });
     expect(await u.evaluate(() => [300, 400, 600, 900, 1200].map((w) => window.__units.masonry.columnsFor(w, 'grid')))).toEqual([2, 2, 3, 4, 5]);
+    // Android's font size setting: a phone keeps two columns at 130%, one at 150% and more
+    expect(await u.evaluate(() => [1, 1.3, 1.5, 2].map((s) => window.__units.masonry.columnsFor(384, 'grid', s)))).toEqual([2, 2, 1, 1]);
   });
 
   test('emoji shortcodes like Discord', async ({ u }) => {

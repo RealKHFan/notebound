@@ -85,6 +85,11 @@ public final class MainActivity extends Activity {
         });
     }
 
+    /** Text follows Android's font size setting (Settings > Display > Font size). */
+    private static int textZoom(Configuration c) {
+        return Math.round((c.fontScale > 0 ? c.fontScale : 1f) * 100);
+    }
+
     String takeCrashReport() {
         java.io.File file = new java.io.File(getFilesDir(), "crash.txt");
         if (!file.exists()) return null;
@@ -113,7 +118,8 @@ public final class MainActivity extends Activity {
         web = new WebView(this);
         root.addView(web, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         setContentView(root);
-        WebView.setWebContentsDebuggingEnabled((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0);
+        final boolean debug = (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        WebView.setWebContentsDebuggingEnabled(debug);
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -124,7 +130,7 @@ public final class MainActivity extends Activity {
         s.setBuiltInZoomControls(false);
         s.setMediaPlaybackRequiresUserGesture(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setTextZoom(100);
+        s.setTextZoom(textZoom(getResources().getConfiguration()));
         if (Build.VERSION.SDK_INT >= 26) s.setSafeBrowsingEnabled(false);
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
         web.setBackgroundColor(isNight() ? 0xFF11141A : 0xFFF4F5F8);
@@ -161,7 +167,7 @@ public final class MainActivity extends Activity {
                     try {
                         startActivity(new Intent(Intent.ACTION_VIEW, u));
                     } catch (Exception e) {
-                        Log.w(TAG, "cannot open " + u);
+                        Log.w(TAG, "no app opens this kind of link");
                     }
                 }
                 return true;
@@ -175,7 +181,8 @@ public final class MainActivity extends Activity {
         web.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onConsoleMessage(ConsoleMessage m) {
-                Log.d(TAG, "js: " + m.message() + " @" + m.lineNumber());
+                // Messages can name notes, so release builds keep them out of the system log.
+                if (debug) Log.d(TAG, "js: " + m.message() + " @" + m.lineNumber());
                 return true;
             }
         });
@@ -435,17 +442,32 @@ public final class MainActivity extends Activity {
                     ArrayList<Uri> many = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
                     if (many != null) list.addAll(many);
                 }
-                for (Uri u : list) uris.put(u.toString());
+                for (Uri u : list) if (ShareProvider.acceptShared(u.getScheme(), u.getAuthority(), ShareProvider.authority(this))) uris.put(u.toString());
                 o.put("uris", uris);
-                if (text == null && list.isEmpty()) return;
+                if (text == null && uris.length() == 0) return;
             } else {
                 return;
             }
         } catch (JSONException e) {
             return;
         }
+        deliver(o, live);
+    }
+
+    private void deliver(JSONObject o, boolean live) {
         if (live && bridge.pageReady) bridge.emit("intent", o);
         else pendingIntent = o.toString();
+    }
+
+    /** A photo taken before Android closed the app: it opens as a new note, like a shared picture. */
+    void deliverPhoto(Uri photo) {
+        try {
+            JSONObject o = new JSONObject().put("action", "share").put("text", "").put("subject", "")
+                .put("uris", new JSONArray().put(photo.toString()));
+            deliver(o, true);
+        } catch (JSONException e) {
+            // cannot happen
+        }
     }
 
     String takePendingIntent() {
@@ -519,6 +541,7 @@ public final class MainActivity extends Activity {
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         if (bridge == null) return;
+        web.getSettings().setTextZoom(textZoom(newConfig));
         JSONObject o = new JSONObject();
         try {
             o.put("dark", isNight());

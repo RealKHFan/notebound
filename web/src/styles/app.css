@@ -105,13 +105,13 @@ input, textarea, [contenteditable] { user-select: text; -webkit-user-select: tex
 
 /* ---------- shared controls ---------- */
 .icon-btn {
-  width: 44px; height: 44px; border-radius: 22px; display: inline-grid; place-items: center; color: var(--muted); flex: none;
+  width: 48px; height: 48px; border-radius: 24px; display: inline-grid; place-items: center; color: var(--muted); flex: none;
 }
 .icon-btn:active { background: var(--surface-3); }
 .icon-btn.on { color: var(--accent); }
 .icon-btn[disabled] { opacity: 0.35; pointer-events: none; }
 .btn {
-  height: 44px; padding: 0 20px; border-radius: 22px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;
+  min-height: 48px; padding: 0 20px; border-radius: 24px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;
   justify-content: center; white-space: nowrap;
 }
 .btn.primary { background: var(--accent); color: var(--accent-ink); }
@@ -276,8 +276,9 @@ select.field { appearance: none; -webkit-appearance: none; background-image: non
 .menu-item .grow { flex: 1; }
 .menu-item .sub { font-size: 13px; color: var(--muted); }
 .menu-item .check { color: var(--accent); }
-.menu-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px 4px 8px; }
-.menu-grid button { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 4px; border-radius: 14px; font-size: 12.5px; text-align: center; }
+/* columns in text units: 4 at normal text size, fewer when Android's font size is larger */
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.2em, 1fr)); gap: 4px; padding: 4px 4px 8px; font-size: 12.5px; }
+.menu-grid button { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 4px; border-radius: 14px; text-align: center; }
 .menu-grid button:active { background: var(--surface-2); }
 .menu-grid .tile { width: 48px; height: 48px; border-radius: 16px; background: var(--surface-2); display: grid; place-items: center; color: var(--text); }
 
@@ -307,7 +308,7 @@ select.field { appearance: none; -webkit-appearance: none; background-image: non
 .swatches { display: flex; gap: 10px; overflow-x: auto; padding: 8px 12px 12px; scrollbar-width: none; }
 .swatches::-webkit-scrollbar { display: none; }
 .swatch {
-  width: 44px; height: 44px; border-radius: 22px; flex: none; border: 2px solid transparent; display: grid; place-items: center;
+  width: 48px; height: 48px; border-radius: 24px; flex: none; border: 2px solid transparent; display: grid; place-items: center;
   position: relative; background: var(--surface);
 }
 .swatch.default { border-color: var(--rule); }

@@ -197,31 +197,6 @@ test('pictures still show when only the note file reaches the browser (Android F
   await ctx.close();
 });
 
-test('pictures from before previews existed get one once, in the background, without counting as an edit', async ({ page, srv }) => {
-  fs.mkdirSync(srv.vaultFile('attachments'), { recursive: true });
-  fs.copyFileSync(path.join(path.resolve('tests/assets'), 'photo-plate.jpg'), srv.vaultFile('attachments/plate.jpg'));
-  const old = '2024-03-01T10:00:00.000Z';
-  const n = seedNote(srv, { title: 'Old photo', html: '<img src="../attachments/plate.jpg" alt=""><p>dinner</p>', modified: old });
-  const plain = seedNote(srv, { title: 'Words only', html: '<p>no pictures</p>' });
-  const plainBefore = fs.readFileSync(plain.path, 'utf8');
-  // a hand-written HTML file (no Notebound metadata) is never rewritten
-  const hand = srv.vaultFile('notes/handmade.html');
-  const handText = '<!doctype html><title>Handmade</title><body><img src="../attachments/plate.jpg"><p>mine</p></body>';
-  fs.writeFileSync(hand, handText);
-  await page.goto(srv.appUrl);
-  await expect(page.locator('.card', { hasText: 'Old photo' })).toBeVisible();
-  await expect.poll(() => fs.readFileSync(n.path, 'utf8'), { timeout: 15000 }).toContain('data-preview="data:image/jpeg;base64,');
-  const meta = metaOf(fs.readFileSync(n.path, 'utf8'));
-  expect(meta.modified).toBe(old);
-  expect(fs.readdirSync(srv.vaultFile('history')).length).toBe(0);
-  expect(fs.readFileSync(plain.path, 'utf8')).toBe(plainBefore);
-  expect(fs.readFileSync(hand, 'utf8')).toBe(handText);
-  await expect.poll(() => JSON.parse(fs.readFileSync(srv.vaultFile('notebound.json'), 'utf8')).picturePreviews).toBe(1);
-  // the note still opens normally and its picture is there
-  await page.locator('.card', { hasText: 'Old photo' }).click();
-  await expect(editor(page)).toContainText('dinner');
-  await expect(editor(page).locator('img')).toHaveCount(1);
-});
 
 test('note files open nicely in a normal browser', async ({ app, srv, browser }) => {
   await app.getByRole('button', { name: 'New list', exact: true }).click();
@@ -236,4 +211,24 @@ test('note files open nicely in a normal browser', async ({ app, srv, browser })
   await expect(p.locator('h1')).toHaveText('Browser view');
   await expect(p.locator('li[data-type="taskItem"]')).toContainText('Milk');
   await ctx.close();
+});
+
+test('a save that fails is tried again, and Back does not throw the text away', async ({ app, srv }) => {
+  const n = seedNote(srv, { title: 'Draft', html: '<p>first line</p>' });
+  await hostEvent(app, 'resume', { pausedMs: 10 });
+  await app.locator('.card', { hasText: 'Draft' }).click();
+  await editor(app).locator('p', { hasText: 'first line' }).click();
+  fs.mkdirSync(n.path + '.pbtmp'); // the next save cannot write its temporary file (like a full phone)
+  await app.keyboard.press('End');
+  await app.keyboard.type(' and an important second sentence');
+  await expect(app.getByText(/Could not save/)).toBeVisible({ timeout: 10000 });
+  // still failing: Back keeps the note open
+  await app.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(app.getByText(/Your text is still here/)).toBeVisible();
+  await expect(editor(app)).toContainText('important second sentence');
+  // the problem is gone: Back saves and closes
+  fs.rmdirSync(n.path + '.pbtmp');
+  await hostEvent(app, 'back');
+  await expect(app.locator('.editor-page')).toHaveCount(0);
+  expect(fs.readFileSync(n.path, 'utf8')).toContain('important second sentence');
 });

@@ -30,7 +30,7 @@
 :root[data-theme='black'] .toolbar-wrap { background: var(--surface); }
 .toolbar { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; padding: 4px 4px; }
 .toolbar::-webkit-scrollbar, .tb-row::-webkit-scrollbar { display: none; }
-.tb-btn { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex: none; color: var(--text); }
+.tb-btn { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; flex: none; color: var(--text); }
 .tb-btn.on { background: var(--accent-soft); color: var(--accent); }
 .tb-btn[disabled] { opacity: 0.3; }
 .tb-btn:active { background: var(--surface-3); }

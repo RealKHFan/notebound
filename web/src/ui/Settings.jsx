@@ -81,6 +81,7 @@ export function SettingsPage() {
     }
     await native.prefsSet('appLock', on ? '1' : null);
     await applySecureFlags();
+    vault.updateWidget().catch(() => {});
     loadDevice();
   };
 

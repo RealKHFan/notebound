@@ -8,8 +8,9 @@ import { native } from '../native.js';
 const GAP = 8;
 const LONG_PRESS_MS = 430;
 
-export function columnsFor(width, layout) {
-  if (layout === 'list') return 1;
+/** textScale: Android's font size setting (2 = twice as big); big text gets fewer, wider columns. */
+export function columnsFor(width, layout, textScale = 1) {
+  if (layout === 'list' || (width && width / textScale < 260)) return 1;
   if (width >= 1100) return 5;
   if (width >= 860) return 4;
   if (width >= 560) return 3;
@@ -40,7 +41,7 @@ export function Masonry({
   const posRef = useRef({});
   const drag = useRef(null);
   const gesture = useRef(null);
-  const cols = columnsFor(width, layout);
+  const cols = columnsFor(width, layout, parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1);
   const ids = entries.map((e) => e.id);
   const selected = new Set(selection);
   const selectionMode = selection.length > 0;

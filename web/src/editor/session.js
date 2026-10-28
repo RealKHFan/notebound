@@ -78,7 +78,14 @@ export class EditorSession {
     clearTimeout(this.timer);
     const p = this.pending;
     this.pending = null;
-    if (p) this.chain = this.chain.then(() => this.save(p)).catch((e) => { this.lastError = e; this.emit('error', e); });
+    if (p) {
+      this.chain = this.chain.then(() => this.save(p)).then(() => { this.lastError = null; }, (e) => {
+        // keep the failed edit queued so the next save or closing the note tries again
+        if (!this.pending) this.pending = p;
+        this.lastError = e;
+        this.emit('error', e);
+      });
+    }
     return this.chain;
   }
 
@@ -120,9 +127,10 @@ export class EditorSession {
     this.emit('meta');
   }
 
-  /** Flush and, if the note ended up empty, remove it like Keep does. Returns 'discarded' or null. */
+  /** Flush and, if the note ended up empty, remove it like Keep does. Returns 'discarded', 'unsaved' or null. */
   async close() {
     await this.flush();
+    if (this.pending) return 'unsaved';
     if (this.id && this.empty && !this.title.trim() && !this.meta.reminder && !this.meta.locked) {
       if (this.createdHere) {
         await this.vault.deleteForever([this.id]);
